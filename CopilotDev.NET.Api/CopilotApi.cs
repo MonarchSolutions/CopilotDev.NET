@@ -28,6 +28,8 @@ namespace CopilotDev.NET.Api
             _configuration = configuration;
             _copilotAuthentication = authentication;
             _httpClient = httpClient;
+            _httpClient.AddOrReplaceHeader("User-Agent", _configuration.UserAgent);
+            _httpClient.AddOrReplaceHeader("Accept", "application/json");
         }
 
         /// <summary>
@@ -51,11 +53,16 @@ namespace CopilotDev.NET.Api
         /// Uses the Copilot Parameter data to customize the result.
         /// </summary>
         /// <param name="parameters"><see cref="CopilotParameters"/> parameters</param>
+        /// <param name="requestTokenOnline"></param>
         /// <returns>A list of returned copilot tokens.</returns>
-        public async Task<List<CopilotResult>> GetCompletionsAsync(CopilotParameters parameters)
+        public async Task<List<CopilotResult>> GetCompletionsAsync(CopilotParameters parameters, bool requestTokenOnline = true)
         {
             _httpClient.AddOrReplaceHeader("OpenAI-Intent", parameters.OpenAiIntent);
             var rawResult = await GetRawCompletionsAsync(JsonSerializer.Serialize(parameters));
+            if (string.IsNullOrEmpty(rawResult))
+            {
+                return new List<CopilotResult>();
+            }
             var lines = rawResult.Split('\n').Where(e => e != "").ToList();
             lines.RemoveAt(lines.Count - 1);
             var results = new List<CopilotResult>();
@@ -79,12 +86,24 @@ namespace CopilotDev.NET.Api
         /// Takes a raw string which is sent per http request and returns the raw result. Useful for testing unknown parameters or results.
         /// </summary>
         /// <param name="rawContent">Raw parameters.</param>
+        /// <param name="requestTokenOnline"></param>
         /// <returns>Raw return result.</returns>
-        public async Task<string> GetRawCompletionsAsync(string rawContent)
+        public async Task<string> GetRawCompletionsAsync(string rawContent, bool requestTokenOnline = true)
         {
-            var accessToken = await _copilotAuthentication.GetAccessTokenAsync();
-            _httpClient.AddOrReplaceHeader("User-Agent", _configuration.UserAgent);
-            _httpClient.AddOrReplaceHeader("Accept", "application/json");
+            string accessToken;
+            if (!requestTokenOnline)
+            {
+                accessToken = await _copilotAuthentication.GetLocalAccessTokenAsync();
+                if (string.IsNullOrEmpty(accessToken))
+                {
+                    return string.Empty;
+                }
+            }
+            else
+            {
+                accessToken = await _copilotAuthentication.GetAccessTokenAsync();
+            }
+
             _httpClient.AddOrReplaceHeader("Authorization", "Bearer " + accessToken);
             var response = await _httpClient.PostAsync(
                 "https://copilot-proxy.githubusercontent.com/v1/engines/copilot-codex/completions",

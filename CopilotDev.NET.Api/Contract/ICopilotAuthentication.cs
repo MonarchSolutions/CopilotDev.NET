@@ -16,5 +16,11 @@ namespace CopilotDev.NET.Api.Contract
         /// </summary>
         /// <returns>Access Token.</returns>
         Task<string> GetAccessTokenAsync();
+
+        /// <summary>
+        /// Gets the access token if there is a valid token on your disk. Otherwise return null.
+        /// </summary>
+        /// <returns>Access Token or null.</returns>
+        Task<string> GetLocalAccessTokenAsync();
     }
 }

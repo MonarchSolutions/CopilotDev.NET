@@ -13,7 +13,7 @@ namespace CopilotDev.NET.Api.Impl
         private readonly CopilotConfiguration _configuration;
         private readonly IDataStore _dataStore;
         private readonly HttpClient _httpClient;
-
+        private CopilotAuthenticationData _authentication;
         /// <summary>
         /// Creates a new instance of the Copilot Authentication flow.
         /// </summary>
@@ -48,6 +48,7 @@ namespace CopilotDev.NET.Api.Impl
 
             if (authenticationData != null && authenticationData.AccessToken != null && DateTime.Now < authenticationData.AccessTokenValidTo)
             {
+                _authentication = authenticationData;
                 return authenticationData.AccessToken;
             }
 
@@ -65,7 +66,32 @@ namespace CopilotDev.NET.Api.Impl
                     .LocalDateTime;
             await _dataStore.SaveAsync(JsonSerializer.Serialize(authenticationData));
 
+            _authentication = authenticationData;
             return authenticationData.AccessToken;
+        }
+
+        public async Task<string> GetLocalAccessTokenAsync()
+        {
+            if (_authentication != null && _authentication.AccessToken != null && DateTime.Now < _authentication.AccessTokenValidTo)
+            {
+                return _authentication.AccessToken;
+            }
+
+            var rawToken = await _dataStore.GetAsync();
+            var authenticationData = new CopilotAuthenticationData();
+
+            if (rawToken != null)
+            {
+                authenticationData = JsonSerializer.Deserialize<CopilotAuthenticationData>(rawToken);
+            }
+
+            if (authenticationData != null && authenticationData.AccessToken != null && DateTime.Now < authenticationData.AccessTokenValidTo)
+            {
+                _authentication = authenticationData;
+                return authenticationData.AccessToken;
+            }
+
+            return null;
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System.Linq;
+using System.Net.Http;
 
 namespace CopilotDev.NET.Api.Extension
 {
@@ -11,6 +12,10 @@ namespace CopilotDev.NET.Api.Extension
         {
             if (httpClient.DefaultRequestHeaders.Contains(header))
             {
+                if (httpClient.DefaultRequestHeaders.TryGetValues(header, out var values) && values.All(v => v == value))
+                {
+                    return;
+                }
                 httpClient.DefaultRequestHeaders.Remove(header);
             }
 

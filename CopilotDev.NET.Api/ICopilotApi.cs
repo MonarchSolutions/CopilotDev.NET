@@ -23,8 +23,9 @@ namespace CopilotDev.NET.Api
         /// Uses the Copilot Parameter data to customize the result.
         /// </summary>
         /// <param name="parameters"><see cref="CopilotParameters"/> parameters</param>
+        /// <param name="requestTokenOnline">If true, connect to github and ask for access token if you don't have one already.</param>
         /// <returns>A list of returned copilot tokens.</returns>
-        Task<List<CopilotResult>> GetCompletionsAsync(CopilotParameters parameters);
+        Task<List<CopilotResult>> GetCompletionsAsync(CopilotParameters parameters, bool requestTokenOnline = true);
 
         /// <summary>
         /// Gets the returned result from the CopilotAI programmer.
@@ -32,7 +33,8 @@ namespace CopilotDev.NET.Api
         /// e.g.
         /// </summary>
         /// <param name="rawContent">Raw parameters.</param>
+        /// <param name="requestTokenOnline">If true, connect to github and ask for access token if you don't have one already.</param>
         /// <returns>Raw return result.</returns>
-        Task<string> GetRawCompletionsAsync(string rawContent);
+        Task<string> GetRawCompletionsAsync(string rawContent, bool requestTokenOnline = true);
     }
 }
